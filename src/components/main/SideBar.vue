@@ -1,7 +1,7 @@
 <template>
   <div class="sideBar">
     左侧
-    <el-tree :data="data" :props="defaultProps" @node-click="handleNodeClick"></el-tree>
+    <el-tree :data="data" @node-click="handleNodeClick" class="tree"></el-tree>
   </div>
 </template>
 
@@ -13,21 +13,21 @@
                 data: [{
                     label: '预防保健',
                     children: [
-                        {label: '节气养生'},
-                        {label: '自我保健'},
-                        {label: '药膳食疗'},
-                        {label: '中药常识'},
-                        {label: '中医文化'},
-                        {label: '儿童健康'},
+                        {label: '节气养生', path: '/jqys'},
+                        {label: '自我保健', path: '/zwbj'},
+                        {label: '药膳食疗', path: '/yssl'},
+                        {label: '中药常识', path: '/zycs'},
+                        {label: '中医文化', path: '/zywh'},
+                        {label: '儿童健康', path: '/etjk'},
                     ]
                 }, {
                     label: '信息管理',
                     children: [
-                        {label: '号源管理'},
-                        {label: '服务团队'},
-                        {label: '开展项目'},
-                        {label: '功效特色'},
-                        {label: '信息维护'}
+                        {label: '号源管理', path: '/hygl'},
+                        {label: '服务团队', path: '/fwtd'},
+                        {label: '开展项目', path: '/kzxm'},
+                        {label: '功效特色', path: '/gxts'},
+                        {label: '信息维护', path: '/xxwh'}
                     ],
                     defaultProps: {
                         children: 'children',
@@ -38,7 +38,9 @@
         },
         methods: {
             handleNodeClick(data) {
-                console.log(data);
+                console.log(data.path);
+                this.$router.push(data.path)
+
             }
         }
     }
@@ -46,11 +48,13 @@
 
 <style scoped>
   .sideBar {
-    width: 150px;
+    /*width: 150px;*/
     height: 700px;
     text-align: center;
     border: aquamarine solid;
-    /*background-color: green;*/
-    float: left;
+  }
+
+  .tree {
+    font-size: 30px;
   }
 </style>

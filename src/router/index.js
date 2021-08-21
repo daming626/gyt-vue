@@ -3,7 +3,7 @@ import Router from 'vue-router'
 
 import Login from "../components/login/login"
 import Main from "../components/main/Main"
-import MainContent from "../components/main/MainContent";
+import Heal from "../components/heal/Heal";
 
 Vue.use(Router);
 
@@ -16,13 +16,42 @@ export default new Router({
     {
       path: '/main',
       name: 'Main',
-      redirect:'/mainContent',
       component: Main,
       children: [
         {
-          path: '/mainContent',
-          name: 'MainContent',
-          component: MainContent,
+          path: '/jqys',
+          name: 'heal',
+          component: Heal
+        },
+        {
+          path: '/zwbj',
+        },
+        {
+          path: '/yssl',
+        },
+        {
+          path: '/zycs',
+        },
+        {
+          path: '/zywh',
+        },
+        {
+          path: '/etjk',
+        },
+        {
+          path: '/hygl',
+        },
+        {
+          path: '/fwtd',
+        },
+        {
+          path: '/kzxm',
+        },
+        {
+          path: '/gxts',
+        },
+        {
+          path: '/xxwh',
         }
       ]
     }
