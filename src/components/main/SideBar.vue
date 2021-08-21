@@ -38,7 +38,7 @@
         },
         methods: {
             handleNodeClick(data) {
-                console.log(data.path);
+                // console.log(data.path);
                 if(data.path){
                     this.$router.push(data.path)
                 }else{

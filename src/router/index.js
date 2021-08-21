@@ -17,7 +17,7 @@ export default new Router({
       path: '/main',
       name: 'Main',
       component: Main,
-      meta:{requireAuth:true},
+      meta:{requireAuth:true},//需要登陆权限
       children: [
         {
           path: '/jqys',
