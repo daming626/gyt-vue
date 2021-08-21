@@ -17,11 +17,13 @@ export default new Router({
       path: '/main',
       name: 'Main',
       component: Main,
+      meta:{requireAuth:true},
       children: [
         {
           path: '/jqys',
           name: 'heal',
-          component: Heal
+          component: Heal,
+          meta:{requireAuth:true},
         },
         {
           path: '/zwbj',

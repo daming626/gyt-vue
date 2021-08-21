@@ -8,9 +8,27 @@ import axios from 'axios';
 import '@/icons' // icon
 import {store} from './store'
 
-
 Vue.prototype.axios=axios;
 Vue.use(ElementUI);
+
+router.beforeEach((to,from,next)=>{
+  if (to.meta.requireAuth){
+    console.log("有此路径")
+    if (store.state.username){
+      console.log(store.state.username)
+      console.log("有token")
+      next()
+    }else{
+      console.log("无token")
+      next({
+        path:'/'
+      })
+    }
+  }else {
+    console.log("无此路径")
+    next();
+  }
+})
 
 new Vue({
   el: '#app',
