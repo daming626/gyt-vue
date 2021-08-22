@@ -1,7 +1,7 @@
 <template>
   <div class="sideBar">
     左侧
-    <el-tree :data="data" @node-click="handleNodeClick" class="tree"></el-tree>
+    <el-tree :data="data" show-checkbox @node-click="handleNodeClick" class="tree" icon-class="el-icon-star-off"></el-tree>
   </div>
 </template>
 
@@ -38,9 +38,12 @@
         },
         methods: {
             handleNodeClick(data) {
-                console.log(data.path);
-                this.$router.push(data.path)
-
+                // console.log(data.path);
+                if(data.path){
+                    this.$router.push(data.path)
+                }else{
+                    console.log("失误了")
+                }
             }
         }
     }

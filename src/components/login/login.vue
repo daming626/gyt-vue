@@ -86,9 +86,10 @@
                         'Content-Type': 'application/json;charset=UTF-8'
                     },
                     method:'POST',
-                    // url:'http://localhost:8080/user/test.do',
                     url:'http://localhost:9090/login.do',
+                    // url:'http://localhost:9090/login.do?username='+this.loginForm.account+'&password='+this.loginForm.password,
                     data:JSON.stringify({username:this.loginForm.account,password:this.loginForm.password})
+                    // data:{username:this.loginForm.account,password:this.loginForm.password}
                 }).then(res =>{
                     console.log(res.data)
                     if(res.data[0]){
@@ -138,7 +139,8 @@
 
   .login-content-mask {
     width: 100%;
-    height: 100%;
+    /*height: 100%;*/
+    height: 600px;
     position: absolute;
     background-image: url("../../assets/login_images/bg_image.png");
     background-repeat: no-repeat;
