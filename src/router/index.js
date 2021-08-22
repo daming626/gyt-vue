@@ -4,6 +4,9 @@ import Router from 'vue-router'
 import Login from "../components/login/login"
 import Main from "../components/main/Main"
 import Heal from "../components/heal/Heal";
+import Project from "../components/project/Project";
+import Feature from "../components/project/Feature";
+import Table from "../components/component/Table";
 
 Vue.use(Router);
 
@@ -46,12 +49,20 @@ export default new Router({
         },
         {
           path: '/kzxm',
+          name: 'project',
+          component: Project
         },
         {
           path: '/gxts',
+          name: 'feature',
+          component: Feature
         },
         {
           path: '/xxwh',
+        },
+        {
+          path: '/table',
+          component:Table
         }
       ]
     }
