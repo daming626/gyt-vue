@@ -1,6 +1,5 @@
 <template>
   <div class="mainContent">
-    主要内容区
     <router-view></router-view>
   </div>
 </template>
@@ -15,7 +14,7 @@ export default {
 <style scoped>
 .mainContent{
   /*width:100%;*/
-  height:700px;
+  height:600px;
   text-align: center;
   border: aquamarine solid;
   /*background-color:gray;*/

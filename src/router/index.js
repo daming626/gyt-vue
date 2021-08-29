@@ -3,10 +3,11 @@ import Router from 'vue-router'
 
 import Login from "../components/login/login"
 import Main from "../components/main/Main"
-import Heal from "../components/heal/Heal";
+import Heal from "../components/information/Information";
 import Project from "../components/project/Project";
 import Feature from "../components/project/Feature";
 import Table from "../components/component/Table";
+import Information from "@/components/information/Information";
 
 Vue.use(Router);
 
@@ -61,6 +62,7 @@ export default new Router({
         },
         {
           path: '/xxwh',
+          component:Information
         },
         {
           path: '/table',

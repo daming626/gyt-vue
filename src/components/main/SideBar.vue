@@ -1,6 +1,5 @@
 <template>
   <div class="sideBar">
-    左侧
     <el-tree :data="data" show-checkbox @node-click="handleNodeClick" class="tree" icon-class="el-icon-star-off"></el-tree>
   </div>
 </template>
@@ -52,7 +51,7 @@
 <style scoped>
   .sideBar {
     /*width: 150px;*/
-    height: 700px;
+    height: 600px;
     text-align: center;
     border: aquamarine solid;
   }
