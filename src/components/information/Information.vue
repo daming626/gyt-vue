@@ -142,8 +142,8 @@
                         'Content-Type': 'application/json;charset=UTF-8'
                     },
                     method:'POST',
-                    url:'http://localhost:7070/insertInformation.do',
-                    // url:'http://localhost:9090/login.do?username='+this.loginForm.account+'&password='+this.loginForm.password,
+                    url:'http://localhost:8080/insertInformation.do',
+                    // url:'http://localhost:8080/login.do?username='+this.loginForm.account+'&password='+this.loginForm.password,
                     // data:JSON.stringify({kk1:this.HOSPITAL_NAME, kk2:this.HOSPITAL_PHONE})
                     data:{
                         hospital_name:this.HOSPITAL.HOSPITAL_NAME,

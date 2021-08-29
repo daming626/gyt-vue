@@ -86,8 +86,8 @@
                         'Content-Type': 'application/json;charset=UTF-8'
                     },
                     method:'POST',
-                    url:'http://localhost:7070/login.do',
-                    // url:'http://localhost:7070/login.do?username='+this.loginForm.account+'&password='+this.loginForm.password,
+                    url:'http://localhost:8080/login.do',
+                    // url:'http://localhost:8080/login.do?username='+this.loginForm.account+'&password='+this.loginForm.password,
                     data:JSON.stringify({username:this.loginForm.account,password:this.loginForm.password})
                     // data:{username:this.loginForm.account,password:this.loginForm.password}
                 }).then(res =>{
