@@ -45,12 +45,12 @@
           <el-table-column
             prop="content"
             label="开展项目描述"
-            width="260">
+            width="550">
           </el-table-column>
           <el-table-column
             prop="price"
             label="开展项目价格"
-            width="180">
+            width="150">
           </el-table-column>
           <el-table-column
             prop="webStatus"
@@ -63,10 +63,12 @@
           <el-table-column
             fixed="right"
             label="操作"
-            width="240">
+            width="250">
             <template slot-scope="scope">
-              <el-button @click="handleClick(scope.row)" type="text" size="small">查看</el-button>
-              <el-button type="text" size="small">编辑</el-button>
+              <PermButton size="small"  label='查看'  @click="handleClick(scope.row)" perms='view' type="primary"/>
+              <PermButton v-if="scope.row.dataStatus === '0'" size="small"  label='提交'  @click="confirm(scope.row,'submit','提交后，信息将无法修改，是否确认提交')" perms='update' type="danger"/>
+              <PermButton v-if="scope.row.dataStatus !== '0'" size="small"  label='取消提交'  @click="confirm(scope.row,'cancel','取消提交将重置所有审核记录，是否确认取消')" perms='delete' type="danger"/>
+              <PermButton v-if="scope.row.dataStatus === '7'" size="small"  label='发布到小程序'  @click="confirm(scope.row,'submit','是否确认发布到小程序')" perms='update' type="danger"/>
             </template>
           </el-table-column>
         </el-table>
@@ -76,14 +78,16 @@
 </template>
 
 <script>
+import PermButton from "../component/PermButton";
 export default {
   name: "Project",
+  components: {PermButton},
   data() {
     return {
       tableData: [{
         //表格原始数据，用于存储原始表格信息
       }],
-      tableNewData:[{
+      tableNewData: [{
         //表格渲染数据，直接渲染到视图
       }],
       options: [{
@@ -106,70 +110,157 @@ export default {
         label: '已下架'
       }],
       selectBoxValue: '全部',
-      searchBox:''
+      searchBox: '',
+      roleName: '县级',
+      Status: '1',
+      // userCode: '9f1992a0-f60d-4738-b15e-b17e8e10717e'
+      userCode: '0022f7a3-9610-4747-b8c5-4bc771ebd288'
     }
   },
   methods: {
     handleClick(row) {
       console.log(row);
     },
+    confirm(value,type,message) {
+      var val = value //传参
+      var msg = message //错误信息
+      var flag = type //需要进入的方法
+      this.$confirm(msg, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        center: true
+      }).then(() => {
+        if(flag === 'submit'){
+          this.statusUpdate(val)
+        }else if(flag === 'cancel'){
+          this.submitCancel(val)
+        }
+        this.$message({
+          type: 'success',
+          message: '操作成功!'
+        });
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '数据异常，请重试'
+        });
+      });
+    },
+    statusUpdate(row) {//提交状态改变
+      if(row.dataStatus==='0'){
+        row.dataStatus = '1'
+      }else if(row.dataStatus==='1'){
+        row.dataStatus = '3'
+      }else if(row.dataStatus==='3'){
+        row.dataStatus = '5'
+      }else if(row.dataStatus==='5'){
+        row.dataStatus = '7'
+      }else if(row.dataStatus==='7'){
+        row.dataStatus = '8'
+      }
+      this.axios.put('http://localhost:9090/updateProject', {
+        itemid: row.itemid,
+        itemcode: row.itemcode,
+        dataStatus: row.dataStatus
+      }).then(res => {
+        this.refreshTable()
+        console.log("请求成功")
+      }).catch(() => {
+        console.log("请求失败了")
+      })
+    },
+    submitCancel(row) {//取消提交
+      row.dataStatus = '0'
+      this.axios.put('http://localhost:9090/updateProject', {
+        itemid: row.itemid,
+        itemcode: row.itemcode,
+        dataStatus: row.dataStatus
+      }).then(res => {
+        this.refreshTable()
+        console.log("请求成功")
+      }).catch(() => {
+        console.log("请求失败了")
+      })
+    },
+    hasPerms: function (perms) {
+      // 根据权限标识和外部指示状态进行权限判断
+      return hasPermission(perms)
+    },
+    getPermission(){ // 模拟接口 获取 权限数据集合
+      let perms = ['search','view','update','delete'];
+      this.$store.dispatch("SET_PERMISSION",perms);
+    },
+    refreshTable(){//刷新表格
+      var allProject;
+      this.axios.get('http://localhost:9090/selectchaAll', {
+        params: {
+          status: this.Status,
+          userCode: this.userCode
+        }
+      }).then(res => {
+        allProject = res.data
+        this.tableInit(allProject)
+      }).catch(() => {
+        console.log(error)
+        console.log("请求失败了")
+      })
+    },
     tableInit: function (tableItems) {
       //初始化表格信息
-      tableItems.forEach(function (i,index) {
-        if(i.dataStatus==='0'){
+      tableItems.forEach(function (i, index) {
+        if (i.dataStatus === '0') {
           i.webStatus = '保存'
-        }else if(i.dataStatus==='1'){
+        } else if (i.dataStatus === '1') {
           i.webStatus = '管理员提交待县局审核'
-        }else if(i.dataStatus==='2'){
+        } else if (i.dataStatus === '2') {
           i.webStatus = '县局审核不通过'
-        }else if(i.dataStatus==='3'){
+        } else if (i.dataStatus === '3') {
           i.webStatus = '县局审核通过待市局审核'
-        }else if(i.dataStatus==='4'){
+        } else if (i.dataStatus === '4') {
           i.webStatus = '市局审核不通过'
-        }else if(i.dataStatus==='5'){
+        } else if (i.dataStatus === '5') {
           i.webStatus = '市局审核通过待省局审核'
-        }else if(i.dataStatus==='6'){
+        } else if (i.dataStatus === '6') {
           i.webStatus = '省局审核不通过'
-        }else if(i.dataStatus==='7'){
+        } else if (i.dataStatus === '7') {
           i.webStatus = '省局审核通过待管理员确认发布到小程序'
-        }else if(i.dataStatus==='8'){
+        } else if (i.dataStatus === '8') {
           i.webStatus = '管理员确认发布到小程序'
-        }else if(i.dataStatus==='9'){
+        } else if (i.dataStatus === '9') {
           i.webStatus = '从小程序上下架'
         }
       })
       this.tableData = tableItems;
       this.tableNewData = tableItems;
     },
-    filterTag(value, row) {
-      console.log(value)
-      console.log(row)
+    filterTag(value, row) {//表格筛选
       return row.webStatus === value
     },
-    filterTable:function (value){
-      if(value === '全部'){
+    filterTable: function (value) {
+      if (value === '全部') {
         return this.tableNewData = this.tableData
-      }else if(value === '保存' ){
-        this.tableNewData = this.tableData.filter(function(i){
+      } else if (value === '保存') {
+        this.tableNewData = this.tableData.filter(function (i) {
           return i.dataStatus === '0'
         })
         return this.tableNewData
-      }else if(value === '审核中'){
-        return this.tableNewData = this.tableData.filter(function(i){
+      } else if (value === '审核中') {
+        return this.tableNewData = this.tableData.filter(function (i) {
           return i.dataStatus === '1' || i.dataStatus === '3' || i.dataStatus === '5' || i.dataStatus === '7'
         })
-      }else if(value === '审核未通过' ){
-        this.tableNewData = this.tableData.filter(function(i){
+      } else if (value === '审核未通过') {
+        this.tableNewData = this.tableData.filter(function (i) {
           return i.dataStatus === '2' || i.dataStatus === '4' || i.dataStatus === '6'
         })
         return this.tableNewData
-      }else if(value === '已上架' ){
-        this.tableNewData = this.tableData.filter(function(i){
+      } else if (value === '已上架') {
+        this.tableNewData = this.tableData.filter(function (i) {
           return i.dataStatus === '8'
         })
         return this.tableNewData
-      }else if(value === '已下架' ){
-        this.tableNewData = this.tableData.filter(function(i){
+      } else if (value === '已下架') {
+        this.tableNewData = this.tableData.filter(function (i) {
           return i.dataStatus === '9'
         })
         return this.tableNewData
@@ -177,22 +268,24 @@ export default {
 
     }
   },
-  mounted: function () {
+  created: function () {
     var allProject;
-    var vm = this
-    // this.axios.get('http://localhost:8088/selectchaAll?status=1&userCode=9f1992a0-f60d-4738-b15e-b17e8e10717e').then(function(res){})
-    this.axios.get('http://localhost:8088/selectchaAll',{
-      params:{
-        status:"1",
-        userCode:"9f1992a0-f60d-4738-b15e-b17e8e10717e"
+    // this.axios.get('http://localhost:9090/selectchaAll?status=1&userCode=9f1992a0-f60d-4738-b15e-b17e8e10717e').then(function(res){})
+    this.axios.get('http://localhost:9090/selectchaAll', {
+      params: {
+        status: this.Status,
+        userCode: this.userCode
       }
-    }).then(res =>{
+    }).then(res => {
       allProject = res.data
-      vm.tableInit(allProject)
-    }).catch(()=>{
+      this.tableInit(allProject)
+    }).catch(() => {
       console.log(error)
       console.log("请求失败了")
     })
+  },
+  mounted() {
+    this.getPermission()
   }
 }
 </script>
