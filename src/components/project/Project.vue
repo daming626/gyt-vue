@@ -26,7 +26,11 @@
       <div class="content">
         <el-table
           ref="filterTable"
-          :data="tableNewData.filter(data => !searchBox || data.name.toLowerCase().includes(searchBox.toLowerCase()))"
+          :data="tableNewData.slice((paging.currentPage - 1 ) * paging.pagesize, paging.currentPage * paging.pagesize)"
+          v-loading="loading"
+          element-loading-text="拼命加载中"
+          element-loading-spinner="el-icon-loading"
+          element-loading-background="transparent"
           border
           style="width: 100%">
           <el-table-column
@@ -43,7 +47,7 @@
             width="220">
           </el-table-column>
           <el-table-column
-            prop="content"
+            prop="content1"
             label="开展项目描述"
             width="550">
           </el-table-column>
@@ -56,8 +60,8 @@
             prop="webStatus"
             label="开展项目状态"
             v-model="selectBoxValue"
-            :filters="[{ text: '审核中', value: '管理员提交待县局审核' }, { text: '公司', value: '公司' }]"
-            :filter-method="filterTag"
+            :filters="options"
+            :filter-method="filterTable"
             width="260">
           </el-table-column>
           <el-table-column
@@ -73,44 +77,59 @@
           </el-table-column>
         </el-table>
       </div>
+      <div class="main-footer">
+        <pagination
+          :total="total"
+          :paging="paging"
+          @pagination="handleSizeChange">
+        </pagination>
+      </div>
     </div>
   </div>
 </template>
-
 <script>
 import PermButton from "../component/PermButton";
+import Pagination from "../component/Pagination"
+import config from "../../config"
+import { copyObj } from '../../utils/common'
 export default {
   name: "Project",
-  components: {PermButton},
+  components: {PermButton,Pagination},
   data() {
     return {
       tableData: [{
         //表格原始数据，用于存储原始表格信息
       }],
-      tableNewData: [{
-        //表格渲染数据，直接渲染到视图
-      }],
       options: [{
         value: '全部',
+        text: '全部',
         label: '全部'
       }, {
         value: '保存',
+        text: '保存',
         label: '保存'
       }, {
         value: '审核中',
+        text: '审核中',
         label: '审核中'
       }, {
         value: '审核未通过',
+        text: '审核未通过',
         label: '审核未通过'
       }, {
         value: '已上架',
+        text: '已上架',
         label: '已上架'
       }, {
         value: '已下架',
+        text: '已下架',
         label: '已下架'
       }],
       selectBoxValue: '全部',
+      filterVal: '全部',
+      loading: false, // 表格数据加载状态
       searchBox: '',
+      paging: copyObj(config.paging), // 分页的信息
       roleName: '县级',
       Status: '1',
       // userCode: '9f1992a0-f60d-4738-b15e-b17e8e10717e'
@@ -120,7 +139,22 @@ export default {
   methods: {
     handleClick(row) {
       console.log(row);
+      console.log(`${config.hostName}updateProject`)
     },
+    /***
+     * 页面大小转换
+     * @param paging 页面参数
+     */
+    handleSizeChange(paging) {
+      this.paging.currentPage = paging.currentPage
+      this.paging.pagesize = paging.pagesize
+    },
+    /***
+     * 弹窗方法封装
+     * @param value  传入参数 一般为行数据
+     * @param type  用于选择“确定”后的方法
+     * @param message 消息提示参数
+     */
     confirm(value,type,message) {
       var val = value //传参
       var msg = message //错误信息
@@ -147,19 +181,18 @@ export default {
         });
       });
     },
-    statusUpdate(row) {//提交状态改变
-      if(row.dataStatus==='0'){
-        row.dataStatus = '1'
-      }else if(row.dataStatus==='1'){
-        row.dataStatus = '3'
-      }else if(row.dataStatus==='3'){
-        row.dataStatus = '5'
-      }else if(row.dataStatus==='5'){
-        row.dataStatus = '7'
-      }else if(row.dataStatus==='7'){
-        row.dataStatus = '8'
-      }
-      this.axios.put('http://localhost:9090/updateProject', {
+
+    /***
+     * 改变项目提交状态
+     * @param row 当前行
+     */
+    statusUpdate(row) {
+      if(row.dataStatus==='0')row.dataStatus = '1'
+      else if(row.dataStatus==='1') row.dataStatus = '3'
+      else if(row.dataStatus==='3') row.dataStatus = '5'
+      else if(row.dataStatus==='5') row.dataStatus = '7'
+      else if(row.dataStatus==='7') row.dataStatus = '8'
+      this.axios.put(`${config.hostName}updateProject`, {
         itemid: row.itemid,
         itemcode: row.itemcode,
         dataStatus: row.dataStatus
@@ -170,9 +203,14 @@ export default {
         console.log("请求失败了")
       })
     },
+
+    /***
+     * 取消项目提交
+     * @param row 当前行
+     */
     submitCancel(row) {//取消提交
       row.dataStatus = '0'
-      this.axios.put('http://localhost:9090/updateProject', {
+      this.axios.put(`${config.hostName}updateProject`, {
         itemid: row.itemid,
         itemcode: row.itemcode,
         dataStatus: row.dataStatus
@@ -192,102 +230,117 @@ export default {
       this.$store.dispatch("SET_PERMISSION",perms);
     },
     refreshTable(){//刷新表格
-      var allProject;
-      this.axios.get('http://localhost:9090/selectchaAll', {
+      this.axios.get(`${config.hostName}selectchaAll`, {
         params: {
           status: this.Status,
           userCode: this.userCode
         }
       }).then(res => {
-        allProject = res.data
-        this.tableInit(allProject)
+        this.tableInit(res.data)
       }).catch(() => {
         console.log(error)
         console.log("请求失败了")
       })
     },
+
+    /***
+     * 初始化表格信息
+     * @param tableItems 传入表格对象
+     */
     tableInit: function (tableItems) {
       //初始化表格信息
-      tableItems.forEach(function (i, index) {
-        if (i.dataStatus === '0') {
-          i.webStatus = '保存'
-        } else if (i.dataStatus === '1') {
-          i.webStatus = '管理员提交待县局审核'
-        } else if (i.dataStatus === '2') {
-          i.webStatus = '县局审核不通过'
-        } else if (i.dataStatus === '3') {
-          i.webStatus = '县局审核通过待市局审核'
-        } else if (i.dataStatus === '4') {
-          i.webStatus = '市局审核不通过'
-        } else if (i.dataStatus === '5') {
-          i.webStatus = '市局审核通过待省局审核'
-        } else if (i.dataStatus === '6') {
-          i.webStatus = '省局审核不通过'
-        } else if (i.dataStatus === '7') {
-          i.webStatus = '省局审核通过待管理员确认发布到小程序'
-        } else if (i.dataStatus === '8') {
-          i.webStatus = '管理员确认发布到小程序'
-        } else if (i.dataStatus === '9') {
-          i.webStatus = '从小程序上下架'
-        }
+      tableItems.forEach(function (i) {
+        if (i.dataStatus === '0') i.webStatus = '保存'
+        else if (i.dataStatus === '1') i.webStatus = '管理员提交待县局审核'
+        else if (i.dataStatus === '2') i.webStatus = '县局审核不通过'
+        else if (i.dataStatus === '3') i.webStatus = '县局审核通过待市局审核'
+        else if (i.dataStatus === '4') i.webStatus = '市局审核不通过'
+        else if (i.dataStatus === '5') i.webStatus = '市局审核通过待省局审核'
+        else if (i.dataStatus === '6') i.webStatus = '省局审核不通过'
+        else if (i.dataStatus === '7') i.webStatus = '省局审核通过待管理员确认发布到小程序'
+        else if (i.dataStatus === '8') i.webStatus = '管理员确认发布到小程序'
+        else if (i.dataStatus === '9') i.webStatus = '从小程序上下架'
       })
       this.tableData = tableItems;
-      this.tableNewData = tableItems;
     },
-    filterTag(value, row) {//表格筛选
-      return row.webStatus === value
+    filterTable: function (value,row) {
+      this.filterVal = value
     },
-    filterTable: function (value) {
-      if (value === '全部') {
-        return this.tableNewData = this.tableData
-      } else if (value === '保存') {
-        this.tableNewData = this.tableData.filter(function (i) {
-          return i.dataStatus === '0'
-        })
-        return this.tableNewData
-      } else if (value === '审核中') {
-        return this.tableNewData = this.tableData.filter(function (i) {
-          return i.dataStatus === '1' || i.dataStatus === '3' || i.dataStatus === '5' || i.dataStatus === '7'
-        })
-      } else if (value === '审核未通过') {
-        this.tableNewData = this.tableData.filter(function (i) {
-          return i.dataStatus === '2' || i.dataStatus === '4' || i.dataStatus === '6'
-        })
-        return this.tableNewData
-      } else if (value === '已上架') {
-        this.tableNewData = this.tableData.filter(function (i) {
-          return i.dataStatus === '8'
-        })
-        return this.tableNewData
-      } else if (value === '已下架') {
-        this.tableNewData = this.tableData.filter(function (i) {
-          return i.dataStatus === '9'
-        })
-        return this.tableNewData
-      }
 
+    /***
+     * 用于搜索表格
+     * @param search 搜索框内容
+     * @param tableData 需要搜索的表格
+     * @returns {*}
+     */
+    search(search,tableData){
+      if (search) {//搜索
+        return tableData.filter(data => {
+          return Object.keys(data).some(key => {
+            if (key === 'name') { // 检索的关键词
+              return String(data[key]).toLowerCase().indexOf(search) > -1
+            }
+          })
+        })
+      }
+      return tableData
+    },
+    getProjectList(){
+      // this.axios.get('http://localhost:9090/selectchaAll?status=1&userCode=9f1992a0-f60d-4738-b15e-b17e8e10717e').then(function(res){})
+      this.axios.get(`${config.hostName}selectchaAll`, {
+        params: {
+          status: this.Status,
+          userCode: this.userCode
+        }
+      }).then(res => {
+        this.tableInit(res.data)
+      }).catch(() => {
+        console.log("请求失败了")
+      })
     }
   },
-  created: function () {
-    var allProject;
-    // this.axios.get('http://localhost:9090/selectchaAll?status=1&userCode=9f1992a0-f60d-4738-b15e-b17e8e10717e').then(function(res){})
-    this.axios.get('http://localhost:9090/selectchaAll', {
-      params: {
-        status: this.Status,
-        userCode: this.userCode
+  computed:{
+    total() {
+      return this.tableData.length
+    },
+    tableNewData() {//真正渲染到表格组件上的表格数据
+      const filter = this.filterVal
+      const searchBoxValue = this.searchBox
+      if(filter){//提交状态筛选
+        if(filter === '全部'){
+          return this.search(searchBoxValue,this.tableData)
+        }else if(filter === '保存'){
+          return this.search(searchBoxValue,this.tableData.filter(i=>(i.dataStatus === '0')))
+        }else if(filter === '审核中'){
+          return this.search(searchBoxValue,this.tableData.filter(i=>(i.dataStatus === '1' || i.dataStatus === '3' || i.dataStatus === '5' || i.dataStatus === '7')))
+        }else if(filter === '审核未通过'){
+          return this.search(searchBoxValue,this.tableData.filter(i=>(i.dataStatus === '2' || i.dataStatus === '4' || i.dataStatus === '6' )))
+        }else if(filter === '已上架'){
+          return this.search(searchBoxValue,this.tableData.filter(i=>(i.dataStatus === '8' )))
+        }else if(filter === '已下架'){
+          return this.search(searchBoxValue,this.tableData.filter(i=>(i.dataStatus === '9' )))
+        }
       }
-    }).then(res => {
-      allProject = res.data
-      this.tableInit(allProject)
-    }).catch(() => {
-      console.log(error)
-      console.log("请求失败了")
-    })
+      return this.tableData
+    }
   },
   mounted() {
     this.getPermission()
+    this.getProjectList()
   }
 }
 </script>
 <style scoped>
+.content{
+  width: 100%;
+  height: 520px;
+  flex: 1;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+.main-footer{
+  width: 100%;
+  height: 50px;
+  align-items: center;
+}
 </style>
